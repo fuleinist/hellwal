@@ -902,13 +902,32 @@ char* home_full_path(const char* path)
 
 /* 
  * checks if output directory exists,
- * if not creates it
+ * if not creates it (including parent directories)
  */
 void check_output_dir(char *path)
 {
     struct stat st;
-    if (stat(path, &st) == -1)
-        mkdir(path, 0700);
+    if (stat(path, &st) == -1) {
+        // Recursively create parent directories, then the final directory
+        size_t len = strlen(path);
+        char *tmp = malloc(len + 1);
+        if (!tmp) return;
+        
+        strcpy(tmp, path);
+        
+        // Create each directory component
+        for (char *p = tmp + 1; *p; p++) {
+            if (*p == '/') {
+                *p = '\0';
+                if (strlen(tmp) > 0) {
+                    mkdir(tmp, 0755);
+                }
+                *p = '/';
+            }
+        }
+        mkdir(tmp, 0755);
+        free(tmp);
+    }
 }
 
 /* run script from given path */
